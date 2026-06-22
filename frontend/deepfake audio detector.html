@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AudioSleuth - Deepfake Detector</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom styles -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom gradient button */
+        .btn-gradient {
+            background: linear-gradient(to right, #4f46e5, #7c3aed);
+            transition: all 0.3s ease;
+        }
+        .btn-gradient:hover {
+            box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.4), 0 4px 6px -4px rgba(124, 58, 237, 0.4);
+            transform: translateY(-2px);
+        }
+        .btn-gradient:disabled {
+            background: #4b5563; /* gray-600 */
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        /* Custom file drop zone */
+        #drop-zone {
+            border: 2px dashed #4b5563; /* gray-600 */
+            transition: all 0.3s ease;
+        }
+        #drop-zone.drag-over {
+            border-color: #6d28d9; /* violet-700 */
+            background-color: #374151; /* gray-700 */
+        }
+        /* Result card animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        /* Page container class */
+        .page-container {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        /* Hide elements */
+        .hidden {
+            display: none;
+        }
+        /* Active nav link styles */
+        .nav-link.active {
+            color: #ffffff;
+            background-color: #374151; /* gray-700 */
+        }
+        .nav-link-btn.active {
+            background-color: #5b21b6; /* violet-800 */
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+        }
+        /* Team card hover effect */
+        .team-card {
+            transition: all 0.3s ease-in-out;
+        }
+        .team-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 30px -5px rgba(124, 58, 237, 0.3), 0 8px 15px -8px rgba(124, 58, 237, 0.3);
+        }
+
+        /* --- NEW: Audio Wave Animation --- */
+        .wave-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 60px;
+            gap: 6px;
+        }
+        .wave-bar {
+            width: 8px;
+            background: linear-gradient(to top, #4f46e5, #7c3aed);
+            border-radius: 4px;
+            animation: wave-animation 1.2s infinite ease-in-out;
+        }
+        @keyframes wave-animation {
+            0%, 100% { height: 20%; opacity: 0.5; }
+            50% { height: 100%; opacity: 1; }
+        }
+        /* Stagger the animation for each bar */
+        .wave-bar:nth-child(1) { animation-delay: 0.0s; }
+        .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+        .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+        .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+        .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+        .wave-bar:nth-child(6) { animation-delay: 0.3s; }
+        .wave-bar:nth-child(7) { animation-delay: 0.2s; }
+        .wave-bar:nth-child(8) { animation-delay: 0.1s; }
+        .wave-bar:nth-child(9) { animation-delay: 0.0s; }
+
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen antialiased">
+
+    <!-- Navbar -->
+    <nav class="bg-gray-800/50 backdrop-blur-md shadow-lg sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center">
+                    <svg class="h-8 w-8 text-violet-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2s2 .9 2 2v9c0 1.1-.9 2-2 2zm0 0l12-3" />
+                    </svg>
+                    <span class="ml-3 text-2xl font-bold text-white">AudioSleuth</span>
+                </div>
+                <!-- Nav Links -->
+                <div class="hidden sm:flex sm:items-center sm:space-x-4">
+                    <a href="#" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors" data-page="home">Home</a>
+                    <a href="#" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors" data-page="about">About</a>
+                    <a href="#" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors" data-page="technology">Technology</a>
+                    <a href="#" class="nav-link nav-link-btn px-4 py-2 rounded-md text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 transition-all" data-page="signup">Sign Up</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main id="app-content">
+
+        <!-- PAGE 1: Home (The Uploader) -->
+        <div id="page-home" class="page-container">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                <div class="text-center">
+                    <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-indigo-500">
+                        Deepfake Audio Detection
+                    </h1>
+                    <p class="mt-4 text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
+                        Upload an audio file (.wav, .mp3) to analyze if it's real or a sophisticated deepfake. Our system uses advanced AI to ensure your trust in digital audio.
+                    </p>
+                </div>
+
+                <!-- Uploader Card -->
+                <div class="mt-12 bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border border-gray-700">
+                    <div class="p-8 md:p-12">
+                        <!-- File Drop Zone -->
+                        <div id="drop-zone" class="rounded-lg p-10 text-center cursor-pointer transition-all duration-300 ease-in-out hover:bg-gray-700">
+                            <input type="file" id="file-input" class="hidden" accept="audio/*">
+                            
+                            <div class="flex flex-col items-center justify-center" id="upload-prompt">
+                                <svg class="w-16 h-16 text-gray-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6h.083a5 5 0 011.918 9.664M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                </svg>
+                                <p class="text-xl font-semibold text-gray-300">Drag & drop your audio file here</p>
+                                <p class="text-gray-400 mt-2">or</p>
+                                <button type="button" id="browse-btn" class="mt-4 px-6 py-2 rounded-full text-white font-semibold bg-violet-600 hover:bg-violet-700 transition-colors">
+                                    Browse File
+                                </button>
+                            </div>
+
+                            <!-- File Info (Visible after upload) -->
+                            <div id="file-info" class="hidden text-left">
+                                <div class="flex items-center space-x-4">
+                                    <svg class="w-12 h-12 text-violet-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2s2 .9 2 2v9c0 1.1-.9 2-2 2zm0 0l12-3" />
+                                    </svg>
+                                    <div>
+                                        <p class="text-lg font-medium text-white" id="file-name">filename.mp3</p>
+                                        <p class="text-sm text-gray-400" id="file-size">1.2 MB</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Analyze Button -->
+                        <div class="mt-8 text-center">
+                            <button id="analyze-btn" class="btn-gradient text-white font-bold py-3 px-10 rounded-full text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none" disabled>
+                                Analyze Audio
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div id="results-section" class="mt-12 hidden">
+                    
+                    <!-- NEW: Waveform Visualizer (Replaces Spinner) -->
+                    <div id="wave-visualizer" class="text-center p-8 hidden">
+                        <div class="wave-container mb-4">
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                        </div>
+                        <p id="analysis-status" class="text-lg text-gray-300 font-mono tracking-wide animate-pulse">Analyzing audio signature...</p>
+                    </div>
+
+                    <!-- Result Card -->
+                    <div id="result-card" class="bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border border-gray-700 hidden fade-in">
+                        <div class="p-8 md:p-12">
+                            <h2 class="text-2xl font-bold text-center mb-6">Analysis Complete</h2>
+                            <div class="flex flex-col md:flex-row items-center justify-between space-y-6 md:space-y-0 md:space-x-8">
+                                <!-- Result Text -->
+                                <div class="text-center md:text-left">
+                                    <p class="text-lg text-gray-400">Detection Result:</p>
+                                    <p id="result-text" class="text-5xl font-extrabold text-red-500">FAKE</p>
+                                </div>
+                                <!-- Confidence Score -->
+                                <div class="w-full md:w-auto text-center">
+                                    <p class="text-lg text-gray-400 mb-2">Confidence</p>
+                                    <div class="relative w-32 h-32 mx-auto">
+                                        <svg class="w-full h-full" viewBox="0 0 36 36">
+                                            <path class="text-gray-700" stroke-dasharray="100 100" stroke-width="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                            <path id="confidence-circle" class="text-violet-500" stroke-width="3" stroke-linecap="round" fill="none" stroke-dasharray="95, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                        </svg>
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <span id="confidence-score" class="text-3xl font-bold">95%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Analysis Details -->
+                                <div class="text-center md:text-right">
+                                    <p class="text-lg text-gray-400">File Analyzed:</p>
+                                    <p id="result-file-name" class="text-xl font-medium text-white truncate max-w-xs">speech_sample_01.wav</p>
+                                    <button id="analyze-new-btn" class="mt-4 px-6 py-2 rounded-full text-white font-semibold bg-gray-600 hover:bg-gray-500 transition-colors">
+                                        Analyze Another
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Error Message Card -->
+                    <div id="error-card" class="bg-red-900/50 border border-red-700 text-red-100 px-6 py-5 rounded-2xl shadow-lg mt-8 hidden fade-in">
+                        <h3 class="font-bold text-lg mb-2">Analysis Failed</h3>
+                        <p id="error-message">The server could not be reached or an unknown error occurred.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 2: About Us -->
+        <div id="page-about" class="page-container hidden">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                <div class="text-center">
+                    <h1 class="text-4xl md:text-5xl font-extrabold text-white">About AudioSleuth</h1>
+                    <p class="mt-4 text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
+                        We are dedicated to building a more trustworthy digital world by combating audio-based disinformation.
+                    </p>
+                </div>
+
+                <div class="mt-12 bg-gray-800 rounded-2xl shadow-2xl p-8 md:p-12 border border-gray-700">
+                    <h2 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-indigo-500 mb-6">Our Mission</h2>
+                    <p class="text-lg text-gray-300 leading-relaxed">
+                        In an era of rapid AI advancement, the line between real and synthetic media is blurring. Deepfake audio poses a significant threat to personal security, corporate integrity, and public trust. AudioSleuth was founded by a team of AI researchers and engineers who believe in transparency and accountability.
+                        <br><br>
+                        Our mission is to provide accessible, state-of-the-art tools for journalists, corporations, and the public to detect and verify the authenticity of digital audio, ensuring that voice remains a reliable source of truth.
+                    </p>
+                </div>
+
+                <div class="mt-12">
+                    <h2 class="text-3xl font-bold text-center text-white mb-8">Meet the Team</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+                        
+                        <!-- Team Member 1 -->
+                        <div class="team-card bg-gray-800 rounded-2xl p-6 text-center shadow-lg border border-gray-700">
+                            <img class="w-24 h-24 rounded-full mx-auto mb-4 bg-gray-700" src="https://placehold.co/100x100/4f46e5/ffffff?text=MK" alt="Mrunal Kanpillewar">
+                            <h3 class="text-xl font-semibold text-white">Mrunal Kanpillewar</h3>
+                        </div>
+                        
+                        <!-- Team Member 2 -->
+                        <div class="team-card bg-gray-800 rounded-2xl p-6 text-center shadow-lg border border-gray-700">
+                            <img class="w-24 h-24 rounded-full mx-auto mb-4 bg-gray-700" src="https://placehold.co/100x100/7c3aed/ffffff?text=AA" alt="Ansh Agraekar">
+                            <h3 class="text-xl font-semibold text-white">Ansh Agraekar</h3>
+                        </div>
+                        
+                        <!-- Team Member 3 -->
+                        <div class="team-card bg-gray-800 rounded-2xl p-6 text-center shadow-lg border border-gray-700">
+                            <img class="w-24 h-24 rounded-full mx-auto mb-4 bg-gray-700" src="https://placehold.co/100x100/4338ca/ffffff?text=MK" alt="Mayank Kumbhare">
+                            <h3 class="text-xl font-semibold text-white">Mayank Kumbhare</h3>
+                        </div>
+                        
+                        <!-- Team Member 4 -->
+                        <div class="team-card bg-gray-800 rounded-2xl p-6 text-center shadow-lg border border-gray-700">
+                            <img class="w-24 h-24 rounded-full mx-auto mb-4 bg-gray-700" src="https://placehold.co/100x100/8b5cf6/ffffff?text=SK" alt="Swapnil Kottewar">
+                            <h3 class="text-xl font-semibold text-white">Swapnil Kottewar</h3>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 3: Technology -->
+        <div id="page-technology" class="page-container hidden">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                <div class="text-center">
+                    <h1 class="text-4xl md:text-5xl font-extrabold text-white">Our Technology</h1>
+                    <p class="mt-4 text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
+                        We use a multi-layered detection engine, powered by the industry-leading Wave2Vec model.
+                    </p>
+                </div>
+
+                <div class="mt-12 bg-gray-800 rounded-2xl shadow-2xl p-8 md:p-12 border border-gray-700">
+                    <h2 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-indigo-500 mb-6">Core Model: Wave2Vec 2.0</h2>
+                    <p class="text-lg text-gray-300 leading-relaxed">
+                        At the heart of AudioSleuth is a fine-tuned implementation of <strong class="text-white">Wave2Vec 2.0</strong>, a self-supervised model. Unlike traditional models that rely on spectrograms (visual representations of audio), Wave2Vec learns directly from the raw audio waveform.
+                        <br><br>
+                        This allows it to capture subtle, low-level artifacts, distortions, and inconsistencies in the audio signal that are imperceptible to the human ear but are tell-tale signs of AI generation.
+                    </p>
+
+                    <h3 class="text-2xl font-bold text-white mt-10 mb-6">How It Works</h3>
+                    <ol class="relative border-l border-gray-700">                  
+                        <li class="mb-10 ml-6">
+                            <span class="absolute flex items-center justify-center w-6 h-6 bg-violet-600 rounded-full -left-3 ring-8 ring-gray-800">
+                                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4zM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10z"></path></svg>
+                            </span>
+                            <h4 class="flex items-center mb-1 text-xl font-semibold text-white">Step 1: Audio Preprocessing</h4>
+                            <p class="text-base font-normal text-gray-400">Your uploaded file is loaded, resampled to 16,000 Hz, and converted to a single channel (mono) to match the model's training data.</p>
+                        </li>
+                        <li class="mb-10 ml-6">
+                            <span class="absolute flex items-center justify-center w-6 h-6 bg-violet-600 rounded-full -left-3 ring-8 ring-gray-800">
+                                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M10 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"></path><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0z" clip-rule="evenod"></path></svg>
+                            </span>
+                            <h4 class="flex items-center mb-1 text-xl font-semibold text-white">Step 2: Feature Extraction</h4>
+                            <p class="text-base font-normal text-gray-400">The raw waveform is fed into the model's feature extractor, which converts the audio into a rich, contextualized set of vector representations.</p>
+                        </li>
+                        <li class="mb-10 ml-6">
+                            <span class="absolute flex items-center justify-center w-6 h-6 bg-violet-600 rounded-full -left-3 ring-8 ring-gray-800">
+                                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm3.707-9.293a1 1 0 0 0-1.414-1.414L9 10.586 7.707 9.293a1 1 0 0 0-1.414 1.414l2 2a1 1 0 0 0 1.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                            </span>
+                            <h4 class="flex items-center mb-1 text-xl font-semibold text-white">Step 3: Classification</h4>
+                            <p class="text-base font-normal text-gray-400">A classification head, trained on datasets like ASVspoof, analyzes these vectors and outputs a final "REAL" (bonafide) or "FAKE" (spoof) score with high confidence.</p>
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 4: Sign Up -->
+        <div id="page-signup" class="page-container hidden">
+            <div class="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                <div class="text-center">
+                    <h1 class="text-4xl md:text-5xl font-extrabold text-white">Get Started</h1>
+                    <p class="mt-4 text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
+                        Create an account to access advanced features like batch analysis and API access.
+                    </p>
+                </div>
+
+                <div class="mt-12 bg-gray-800 rounded-2xl shadow-2xl p-8 md:p-12 border border-gray-700">
+                    <form action="#" method="POST">
+                        <div class="space-y-6">
+                            <div>
+                                <label for="name" class="block text-sm font-medium text-gray-300">Full Name</label>
+                                <div class="mt-1">
+                                    <input type="text" name="name" id="name" autocomplete="name" class="block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-violet-500 focus:ring-violet-500 py-3 px-4" placeholder="Jessa Lin">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="email" class="block text-sm font-medium text-gray-300">Email address</label>
+                                <div class="mt-1">
+                                    <input id="email" name="email" type="email" autocomplete="email" required class="block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-violet-500 focus:ring-violet-500 py-3 px-4" placeholder="you@example.com">
+                                </div>
+                            </div>
+
+                            <!-- Password Field -->
+                            <div>
+                                <label for="password" class="block text-sm font-medium text-gray-300">Password</label>
+                                <div class="mt-1 relative">
+                                    <input id="password" name="password" type="password" autocomplete="new-password" required class="block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-violet-500 focus:ring-violet-500 py-3 px-4 pr-10" placeholder="••••••••">
+                                    <span class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" id="toggle-password">
+                                        <!-- Open Eye Icon -->
+                                        <svg id="eye-open-1" class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        <!-- Closed Eye Icon -->
+                                        <svg id="eye-closed-1" class="h-5 w-5 text-gray-400 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.879 16.121A4.001 4.001 0 0112 10a4.002 4.002 0 013.879 6.121m0 0L21 21M3 3l18 18" />
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <!-- Confirm Password Field -->
+                            <div>
+                                <label for="confirm-password" class="block text-sm font-medium text-gray-300">Confirm Password</label>
+                                <div class="mt-1 relative">
+                                    <input id="confirm-password" name="confirm-password" type="password" autocomplete="new-password" required class="block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-violet-500 focus:ring-violet-500 py-3 px-4 pr-10" placeholder="••••••••">
+                                    <span class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" id="toggle-confirm-password">
+                                        <!-- Open Eye Icon -->
+                                        <svg id="eye-open-2" class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        <!-- Closed Eye Icon -->
+                                        <svg id="eye-closed-2" class="h-5 w-5 text-gray-400 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.879 16.121A4.001 4.001 0 0112 10a4.002 4.002 0 013.879 6.121m0 0L21 21M3 3l18 18" />
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <button type="submit" class="w-full flex justify-center btn-gradient text-white font-bold py-3 px-4 rounded-md text-lg shadow-lg">
+                                    Create Account
+                                </button>
+                            </div>
+                        </div>
+                        <p class="text-center mt-6 text-sm text-gray-400">
+                            Already have an account? 
+                            <a href="#" class="font-medium text-violet-400 hover:text-violet-300">
+                                Sign In
+                            </a>
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+
+    <!-- JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- NAVIGATION LOGIC ---
+            const navLinks = document.querySelectorAll('.nav-link');
+            const pages = document.querySelectorAll('.page-container');
+
+            // Function to show a specific page and hide others
+            function showPage(pageId) {
+                pages.forEach(page => {
+                    page.classList.add('hidden');
+                });
+                const targetPage = document.getElementById(`page-${pageId}`);
+                if (targetPage) {
+                    targetPage.classList.remove('hidden');
+                }
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.dataset.page === pageId) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+
+            // Add click event listeners to all nav links
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault(); 
+                    const pageId = link.dataset.page;
+                    showPage(pageId);
+                });
+            });
+
+            // Show the home page by default on load
+            showPage('home');
+
+
+            // --- Password Toggle Logic ---
+            const togglePassword = document.getElementById('toggle-password');
+            const passwordInput = document.getElementById('password');
+            const eyeOpen1 = document.getElementById('eye-open-1');
+            const eyeClosed1 = document.getElementById('eye-closed-1');
+
+            if (togglePassword && passwordInput && eyeOpen1 && eyeClosed1) {
+                togglePassword.addEventListener('click', () => {
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    eyeOpen1.classList.toggle('hidden');
+                    eyeClosed1.classList.toggle('hidden');
+                });
+            }
+
+            const toggleConfirmPassword = document.getElementById('toggle-confirm-password');
+            const confirmPasswordInput = document.getElementById('confirm-password');
+            const eyeOpen2 = document.getElementById('eye-open-2');
+            const eyeClosed2 = document.getElementById('eye-closed-2');
+
+            if (toggleConfirmPassword && confirmPasswordInput && eyeOpen2 && eyeClosed2) {
+                toggleConfirmPassword.addEventListener('click', () => {
+                    const type = confirmPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    confirmPasswordInput.setAttribute('type', type);
+                    eyeOpen2.classList.toggle('hidden');
+                    eyeClosed2.classList.toggle('hidden');
+                });
+            }
+
+
+            // --- UPLOADER LOGIC (for #page-home) ---
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('file-input');
+            const browseBtn = document.getElementById('browse-btn');
+            const uploadPrompt = document.getElementById('upload-prompt');
+            const fileInfo = document.getElementById('file-info');
+            const fileNameEl = document.getElementById('file-name');
+            const fileSizeEl = document.getElementById('file-size');
+            const analyzeBtn = document.getElementById('analyze-btn');
+            const resultsSection = document.getElementById('results-section');
+            
+            // Replaced simple spinner logic with Wave Visualizer
+            const waveVisualizer = document.getElementById('wave-visualizer');
+            const analysisStatus = document.getElementById('analysis-status');
+            
+            const resultCard = document.getElementById('result-card');
+            const resultText = document.getElementById('result-text');
+            const confidenceScore = document.getElementById('confidence-score');
+            const confidenceCircle = document.getElementById('confidence-circle');
+            const resultFileName = document.getElementById('result-file-name');
+            const analyzeNewBtn = document.getElementById('analyze-new-btn');
+            const errorCard = document.getElementById('error-card');
+            const errorMessage = document.getElementById('error-message');
+
+            let selectedFile = null;
+
+            // --- File Selection Handlers ---
+            if (browseBtn) {
+                browseBtn.addEventListener('click', () => {
+                    fileInput.click();
+                });
+            }
+
+            if (fileInput) {
+                fileInput.addEventListener('change', (e) => {
+                    handleFile(e.target.files[0]);
+                });
+            }
+
+            // --- Drag and Drop Handlers ---
+            if (dropZone) {
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.add('drag-over');
+                });
+
+                dropZone.addEventListener('dragleave', () => {
+                    dropZone.classList.remove('drag-over');
+                });
+
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('drag-over');
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        fileInput.files = files; 
+                        handleFile(files[0]);
+                    }
+                });
+
+                dropZone.addEventListener('click', (e) => {
+                    if (e.target.id === 'drop-zone' || e.target.id === 'upload-prompt' || (uploadPrompt && uploadPrompt.contains(e.target))) {
+                        fileInput.click();
+                    }
+                });
+            }
+
+            // --- App Logic ---
+            function handleFile(file) {
+                if (file) {
+                    selectedFile = file;
+                    fileNameEl.textContent = file.name;
+                    fileSizeEl.textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+                    
+                    uploadPrompt.classList.add('hidden');
+                    fileInfo.classList.remove('hidden');
+                    analyzeBtn.disabled = false;
+                    
+                    // Hide previous results
+                    resultsSection.classList.add('hidden');
+                    resultCard.classList.add('hidden');
+                    errorCard.classList.add('hidden');
+                    waveVisualizer.classList.add('hidden');
+                }
+            }
+
+            function resetUploader() {
+                selectedFile = null;
+                fileInput.value = ''; 
+                
+                uploadPrompt.classList.remove('hidden');
+                fileInfo.classList.add('hidden');
+                analyzeBtn.disabled = true;
+                
+                resultsSection.classList.add('hidden');
+                resultCard.classList.add('hidden');
+                waveVisualizer.classList.add('hidden');
+                errorCard.classList.add('hidden');
+            }
+
+            if (analyzeNewBtn) {
+                analyzeNewBtn.addEventListener('click', resetUploader);
+            }
+
+            if (analyzeBtn) {
+                analyzeBtn.addEventListener('click', () => {
+                    if (selectedFile) {
+                        analyzeAudio(selectedFile);
+                    }
+                });
+            }
+
+            // --- Real Backend API Call ---
+            async function analyzeAudio(file) {
+                resultsSection.classList.remove('hidden');
+                
+                // SHOW WAVE VISUALIZER instead of simple spinner
+                waveVisualizer.classList.remove('hidden');
+                resultCard.classList.add('hidden');
+                errorCard.classList.add('hidden');
+                analyzeBtn.disabled = true;
+
+                // Simulate "steps" in analysis text
+                const statusMessages = [
+                    "Uploading audio data...",
+                    "Extracting features...",
+                    "Analyzing spectral density...",
+                    "Checking for digital artifacts...",
+                    "Finalizing result..."
+                ];
+                let msgIndex = 0;
+                const statusInterval = setInterval(() => {
+                    if (msgIndex < statusMessages.length) {
+                        analysisStatus.textContent = statusMessages[msgIndex];
+                        msgIndex++;
+                    }
+                }, 800); // Change message every 800ms
+
+                const formData = new FormData();
+                formData.append('audio', file);
+
+                try {
+                    // This is the URL for the local Python (Flask) server
+                    const response = await fetch('http://127.0.0.1:5000/analyze', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `Server error: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    // Add a small artificial delay if response is too fast, so user sees the cool animation
+                    setTimeout(() => {
+                        clearInterval(statusInterval);
+                        displayResults(result, file.name);
+                    }, 1000);
+
+                } catch (error) {
+                    clearInterval(statusInterval);
+                    console.error("Analysis failed:", error);
+                    showError(error.message);
+                } finally {
+                    // We handle the "hidden" logic inside displayResults or showError
+                }
+            }
+
+            function displayResults(result, analyzedFileName) {
+                waveVisualizer.classList.add('hidden'); // Hide wave
+                resultCard.classList.remove('hidden'); // Show result
+                analyzeBtn.disabled = false;
+                
+                resultFileName.textContent = analyzedFileName;
+
+                const confidencePercent = Math.round(result.confidence * 100);
+                const circleDashArray = `${confidencePercent}, 100`;
+
+                if (result.is_fake) {
+                    resultText.textContent = 'FAKE';
+                    resultText.classList.remove('text-green-500');
+                    resultText.classList.add('text-red-500');
+                    confidenceCircle.classList.remove('text-green-500');
+                    confidenceCircle.classList.add('text-red-500');
+                } else {
+                    resultText.textContent = 'REAL';
+                    resultText.classList.remove('text-red-500');
+                    resultText.classList.add('text-green-500');
+                    confidenceCircle.classList.remove('text-red-500');
+                    confidenceCircle.classList.add('text-green-500');
+                }
+                
+                confidenceScore.textContent = `${confidencePercent}%`;
+                confidenceCircle.setAttribute('stroke-dasharray', circleDashArray);
+            }
+            
+            function showError(message) {
+                waveVisualizer.classList.add('hidden');
+                analyzeBtn.disabled = false;
+                
+                // Friendly error message for the most common error
+                if (message.includes('Failed to fetch')) {
+                    errorMessage.innerHTML = "Could not connect to the backend server. <br>Please make sure your `python app.py` server is running in the terminal.";
+                } else {
+                    errorMessage.textContent = message;
+                }
+                errorCard.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
