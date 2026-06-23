@@ -1,7 +1,10 @@
 # Python
 backend/venv/
+.venv/
 backend/__pycache__/
 *.pyc
+backend/test_tone.wav
+*.log
 
 # VS Code
 .vscode/

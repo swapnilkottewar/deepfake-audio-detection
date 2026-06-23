@@ -27,7 +27,7 @@ def load_model():
     ).to(DEVICE)
     model.eval()
 
-    print(f"✓ New model loaded. Labels: {model.config.id2label}")
+    print(f"New model loaded. Labels: {model.config.id2label}")
     return model, feature_extractor
 
 

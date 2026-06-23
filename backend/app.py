@@ -2,6 +2,13 @@ import sys
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import librosa
+from werkzeug.utils import secure_filename
+
+ALLOWED_EXTENSIONS = {"wav", "flac", "mp3", "ogg", "m4a"}
+
+
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # --- Import NEW model utilities only ---
 try:
@@ -44,10 +51,19 @@ def analyze_audio():
         print("Error: File has no name.")
         return jsonify({"error": "No selected file"}), 400
 
+    filename = secure_filename(file.filename)
+    if not allowed_file(filename):
+        print(f"Error: Unsupported audio extension: {file.filename}")
+        return jsonify({"error": "Unsupported audio file type"}), 400
+
     try:
         # 3) Decode audio from in-memory stream; resample to 16 kHz mono
-        print(f"Processing audio file: {file.filename}")
-        audio_data, sample_rate = librosa.load(file.stream, sr=16000, mono=True)
+        print(f"Processing audio file: {filename}")
+        try:
+            audio_data, sample_rate = librosa.load(file.stream, sr=16000, mono=True)
+        except Exception as e:
+            print(f"Audio decode failed: {e}")
+            return jsonify({"error": "Unsupported or corrupt audio file"}), 400
 
         # 4) Run inference with NEW model
         print("Analyzing with NEW model...")
